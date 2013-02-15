@@ -1,2 +1,2 @@
-scriptLocation <-
-function() demoFile <- system.file("scripts", package = "AppliedPredictiveModeling")
+scriptLocation <- function() system.file("chapters", package = "AppliedPredictiveModeling")
+
