@@ -1,0 +1,158 @@
+
+R version 3.0.0 RC (2013-03-27 r62426) -- "Masked Marvel"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin10.8.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ### R code from Applied Predictive Modeling (2013) by Kuhn and Johnson.
+> ### Copyright 2013 Kuhn and Johnson
+> ### Web Page: http://www.appliedpredictivemodeling.com
+> ### Contact: Max Kuhn (mxkuhn@gmail.com) 
+> ###
+> ### Chapter 8: Regression Trees and Rule-Based Models 
+> ###
+> ### Required packages: AppliedPredictiveModeling, caret, Cubis, doMC (optional),
+> ###                    gbm, lattice, party, partykit, randomForest, rpart, RWeka
+> ###
+> ### Data used: The solubility from the AppliedPredictiveModeling package
+> ###
+> ### Notes: 
+> ### 1) This code is provided without warranty.
+> ###
+> ### 2) This code should help the user reproduce the results in the
+> ### text. There will be differences between this code and what is is
+> ### the computing section. For example, the computing sections show
+> ### how the source functions work (e.g. randomForest() or plsr()),
+> ### which were not directly used when creating the book. Also, there may be 
+> ### syntax differences that occur over time as packages evolve. These files 
+> ### will reflect those changes.
+> ###
+> ### 3) In some cases, the calculations in the book were run in 
+> ### parallel. The sub-processes may reset the random number seed.
+> ### Your results may slightly vary.
+> ###
+> ################################################################################
+> 
+> ################################################################################
+> ### Load the data
+> 
+> library(AppliedPredictiveModeling)
+Loading required package: CORElearn
+Loading required package: cluster
+Loading required package: rpart
+Loading required package: MASS
+Loading required package: plyr
+Loading required package: reshape2
+> data(solubility)
+> 
+> ### Create a control function that will be used across models. We
+> ### create the fold assignments explicitly instead of relying on the
+> ### random number seed being set to identical values.
+> 
+> library(caret)
+Loading required package: foreach
+Loading required package: lattice
+> set.seed(100)
+> indx <- createFolds(solTrainY, returnTrain = TRUE)
+> ctrl <- trainControl(method = "cv", index = indx)
+> 
+> ################################################################################
+> ### Section 8.1 Basic Regression Trees
+> 
+> library(rpart)
+> 
+> ### Fit two CART models to show the initial splitting process. rpart 
+> ### only uses formulas, so we put the predictors and outcome into
+> ### a common data frame first.
+> 
+> trainData <- solTrainXtrans
+> trainData$y <- solTrainY
+> 
+> rpStump <- rpart(y ~ ., data = trainData, 
++                  control = rpart.control(maxdepth = 1))
+> rpSmall <- rpart(y ~ ., data = trainData, 
++                  control = rpart.control(maxdepth = 2))
+> 
+> ### Tune the model
+> library(caret)
+> 
+> set.seed(100)
+> cartTune <- train(x = solTrainXtrans, y = solTrainY,
++                   method = "rpart",
++                   tuneLength = 25,
++                   trControl = ctrl)
+Warning messages:
+1: executing %dopar% sequentially: no parallel backend registered 
+2: In nominalTrainWorkflow(dat = trainData, info = trainInfo, method = method,  :
+  There were missing values in resampled performance measures.
+> cartTune
+951 samples
+228 predictors
+
+No pre-processing
+Resampling: Cross-Validation (10 fold) 
+
+Summary of sample sizes: 856, 857, 855, 856, 856, 855, ... 
+
+Resampling results across tuning parameters:
+
+  cp       RMSE   Rsquared  RMSE SD  Rsquared SD
+  0.0029   0.972  0.775     0.0654   0.039      
+  0.00299  0.966  0.778     0.0533   0.0356     
+  0.00328  0.977  0.773     0.0496   0.0332     
+  0.00356  0.986  0.768     0.0492   0.0346     
+  0.00386  0.998  0.763     0.0575   0.0364     
+  0.00401  1      0.761     0.0513   0.0349     
+  0.00405  1.01   0.757     0.0521   0.0385     
+  0.00422  1.02   0.753     0.0567   0.0426     
+  0.00443  1.02   0.752     0.0544   0.0407     
+  0.00474  1.02   0.751     0.0553   0.0441     
+  0.0052   1.02   0.75      0.0541   0.0445     
+  0.00618  1.02   0.75      0.0596   0.0484     
+  0.00652  1.03   0.745     0.0575   0.0473     
+  0.00829  1.05   0.737     0.0687   0.051      
+  0.00886  1.05   0.736     0.0645   0.0503     
+  0.0115   1.1    0.713     0.0896   0.0541     
+  0.0118   1.1    0.709     0.0936   0.0575     
+  0.0155   1.12   0.697     0.0995   0.0599     
+  0.0179   1.13   0.691     0.106    0.0681     
+  0.0265   1.17   0.668     0.087    0.0595     
+  0.0473   1.26   0.617     0.103    0.0728     
+  0.0618   1.32   0.58      0.124    0.086      
+  0.0697   1.4    0.527     0.123    0.0846     
+  0.138    1.54   0.438     0.2      0.0933     
+  0.373    1.96   0.278     0.199    0.0092     
+
+RMSE was used to select the optimal model using  the smallest value.
+The final value used for the model was cp = 0.00299. 
+> ## cartTune$finalModel
+> 
+> 
+> ### Plot the tuning results
+> plot(cartTune, scales = list(x = list(log = 10)))
+> 
+> ### Use the partykit package to make some nice plots. First, convert
+> ### the rpart objects to party objects.
+> 
+> library(partykit)
+Loading required package: grid
+> 
+> cartTree <- as.party(cartTune$finalModel)
+Error in eval(predvars, data, env) : 
+  invalid 'envir' argument of type 'character'
+Calls: as.party ... eval -> eval -> model.frame -> model.frame.default -> eval
+Execution halted

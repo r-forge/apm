@@ -1,0 +1,1912 @@
+
+R version 2.15.2 (2012-10-26) -- "Trick or Treat"
+Copyright (C) 2012 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ### R code from Applied Predictive Modeling (2013) by Kuhn and Johnson.
+> ### Copyright 2013 Kuhn and Johnson
+> ### Web Page: http://www.appliedpredictivemodeling.com
+> ### Contact: Max Kuhn (mxkuhn@gmail.com) 
+> ###
+> ### Chapter 14 Classification Trees and Rule Based Models
+> ###
+> ### Required packages: AppliedPredictiveModeling, C50, caret, doMC (optional),
+> ###                    gbm, lattice, partykit, pROC, randomForest, reshape2,
+> ###                    rpart, RWeka
+> ###
+> ### Data used: The grant application data. See the file 'CreateGrantData.R'
+> ###
+> ### Notes: 
+> ### 1) This code is provided without warranty.
+> ###
+> ### 2) This code should help the user reproduce the results in the
+> ### text. There will be differences between this code and what is is
+> ### the computing section. For example, the computing sections show
+> ### how the source functions work (e.g. randomForest() or plsr()),
+> ### which were not directly used when creating the book. Also, there may be 
+> ### syntax differences that occur over time as packages evolve. These files 
+> ### will reflect those changes.
+> ###
+> ### 3) In some cases, the calculations in the book were run in 
+> ### parallel. The sub-processes may reset the random number seed.
+> ### Your results may slightly vary.
+> ###
+> ################################################################################
+> 
+> ### NOTE: Many of the models here are computationally expensive. If
+> ### this script is run as-is, the memory requirements will accumulate
+> ### until it exceeds 32gb. 
+> 
+> ################################################################################
+> ### Section 14.1 Basic Classification Trees
+> 
+> library(caret)
+Loading required package: lattice
+Loading required package: reshape2
+Loading required package: plyr
+Loading required package: cluster
+Loading required package: foreach
+> 
+> load("grantData.RData")
+> 
+> ctrl <- trainControl(method = "LGOCV",
++                      summaryFunction = twoClassSummary,
++                      classProbs = TRUE,
++                      index = list(TrainSet = pre2008),
++                      savePredictions = TRUE)
+> 
+> set.seed(476)
+> rpartFit <- train(x = training[,fullSet], 
++                   y = training$Class,
++                   method = "rpart",
++                   tuneLength = 30,
++                   metric = "ROC",
++                   trControl = ctrl)
+Loading required package: pROC
+Type 'citation("pROC")' for a citation.
+
+Attaching package: 'pROC'
+
+The following object(s) are masked from 'package:stats':
+
+    cov, smooth, var
+
+Warning message:
+executing %dopar% sequentially: no parallel backend registered 
+> rpartFit
+8190 samples
+1070 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  cp        ROC    Sens   Spec 
+  0.000351  0.895  0.779  0.837
+  0.000394  0.895  0.779  0.837
+  0.000526  0.896  0.804  0.841
+  0.000657  0.897  0.823  0.83 
+  0.000789  0.897  0.793  0.839
+  0.000877  0.897  0.877  0.818
+  0.000894  0.897  0.877  0.818
+  0.00092   0.897  0.877  0.818
+  0.00105   0.898  0.881  0.806
+  0.00131   0.906  0.882  0.816
+  0.00145   0.91   0.844  0.848
+  0.00158   0.911  0.847  0.846
+  0.0021    0.912  0.811  0.862
+  0.00224   0.912  0.811  0.862
+  0.00237   0.912  0.811  0.862
+  0.00272   0.912  0.811  0.862
+  0.00276   0.912  0.811  0.862
+  0.0028    0.912  0.8    0.865
+  0.00289   0.912  0.8    0.865
+  0.00394   0.883  0.886  0.811
+  0.00421   0.875  0.858  0.81 
+  0.0046    0.875  0.858  0.81 
+  0.00526   0.874  0.858  0.81 
+  0.00736   0.884  0.837  0.813
+  0.0113    0.884  0.837  0.813
+  0.021     0.871  0.947  0.727
+  0.0227    0.871  0.947  0.727
+  0.0465    0.85   0.944  0.735
+  0.0715    0.852  0.944  0.738
+  0.387     0.815  0.991  0.638
+
+ROC was used to select the optimal model using  the largest value.
+The final value used for the model was cp = 0.00289. 
+> 
+> library(partykit)
+Loading required package: grid
+> plot(as.party(rpartFit$finalModel))
+> 
+> rpart2008 <- merge(rpartFit$pred,  rpartFit$bestTune)
+> rpartCM <- confusionMatrix(rpartFit, norm = "none")
+> rpartCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Loading required package: class
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          456          133
+  unsuccessful        114          854
+                                          
+               Accuracy : 0.8414          
+                 95% CI : (0.8223, 0.8592)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : <2e-16          
+                                          
+                  Kappa : 0.6606          
+ Mcnemar's Test P-Value : 0.2521          
+                                          
+            Sensitivity : 0.8000          
+            Specificity : 0.8652          
+         Pos Pred Value : 0.7742          
+         Neg Pred Value : 0.8822          
+             Prevalence : 0.3661          
+         Detection Rate : 0.2929          
+   Detection Prevalence : 0.3783          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> rpartRoc <- roc(response = rpartFit$pred$obs,
++                 predictor = rpartFit$pred$successful,
++                 levels = rev(levels(rpartFit$pred$obs)))
+> 
+> set.seed(476)
+> rpartFactorFit <- train(x = training[,factorPredictors], 
++                         y = training$Class,
++                         method = "rpart",
++                         tuneLength = 30,
++                         metric = "ROC",
++                         trControl = ctrl)
+> rpartFactorFit 
+8190 samples
+1488 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  cp        ROC    Sens   Spec 
+  0.000175  0.902  0.737  0.87 
+  0.00021   0.902  0.737  0.87 
+  0.000263  0.902  0.737  0.87 
+  0.000368  0.892  0.761  0.865
+  0.000376  0.892  0.761  0.865
+  0.000394  0.892  0.761  0.865
+  0.000526  0.892  0.775  0.866
+  0.000657  0.895  0.795  0.867
+  0.000789  0.899  0.821  0.865
+  0.000877  0.899  0.821  0.865
+  0.00092   0.899  0.821  0.865
+  0.00105   0.897  0.825  0.857
+  0.00118   0.898  0.825  0.856
+  0.00131   0.894  0.837  0.847
+  0.00145   0.894  0.837  0.847
+  0.00184   0.902  0.825  0.855
+  0.00237   0.902  0.825  0.858
+  0.0025    0.903  0.821  0.866
+  0.00263   0.903  0.821  0.866
+  0.00289   0.91   0.812  0.872
+  0.00394   0.892  0.847  0.831
+  0.00539   0.892  0.847  0.831
+  0.0071    0.892  0.847  0.831
+  0.00763   0.901  0.847  0.831
+  0.0116    0.899  0.828  0.834
+  0.0146    0.899  0.828  0.834
+  0.0318    0.9    0.823  0.841
+  0.0652    0.867  0.865  0.779
+  0.153     0.817  0.988  0.645
+  0.393     0.817  0.988  0.645
+
+ROC was used to select the optimal model using  the largest value.
+The final value used for the model was cp = 0.00289. 
+> plot(as.party(rpartFactorFit$finalModel))
+> 
+> rpartFactor2008 <- merge(rpartFactorFit$pred,  rpartFactorFit$bestTune)
+> rpartFactorCM <- confusionMatrix(rpartFactorFit, norm = "none")
+> rpartFactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          463          126
+  unsuccessful        107          861
+                                          
+               Accuracy : 0.8504          
+                 95% CI : (0.8317, 0.8677)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : <2e-16          
+                                          
+                  Kappa : 0.6798          
+ Mcnemar's Test P-Value : 0.2383          
+                                          
+            Sensitivity : 0.8123          
+            Specificity : 0.8723          
+         Pos Pred Value : 0.7861          
+         Neg Pred Value : 0.8895          
+             Prevalence : 0.3661          
+         Detection Rate : 0.2974          
+   Detection Prevalence : 0.3783          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> rpartFactorRoc <- roc(response = rpartFactorFit$pred$obs,
++                       predictor = rpartFactorFit$pred$successful,
++                       levels = rev(levels(rpartFactorFit$pred$obs)))
+> 
+> plot(rpartRoc, type = "s", print.thres = c(.5),
++      print.thres.pch = 3,
++      print.thres.pattern = "",
++      print.thres.cex = 1.2,
++      col = "red", legacy.axes = TRUE,
++      print.thres.col = "red")
+
+Call:
+roc.default(response = rpartFit$pred$obs, predictor = rpartFit$pred$successful,     levels = rev(levels(rpartFit$pred$obs)))
+
+Data: rpartFit$pred$successful in 29610 controls (rpartFit$pred$obs unsuccessful) < 17100 cases (rpartFit$pred$obs successful).
+Area under the curve: 0.8915
+> plot(rpartFactorRoc,
++      type = "s",
++      add = TRUE,
++      print.thres = c(.5),
++      print.thres.pch = 16, legacy.axes = TRUE,
++      print.thres.pattern = "",
++      print.thres.cex = 1.2)
+
+Call:
+roc.default(response = rpartFactorFit$pred$obs, predictor = rpartFactorFit$pred$successful,     levels = rev(levels(rpartFactorFit$pred$obs)))
+
+Data: rpartFactorFit$pred$successful in 29610 controls (rpartFactorFit$pred$obs unsuccessful) < 17100 cases (rpartFactorFit$pred$obs successful).
+Area under the curve: 0.8859
+> legend(.75, .2,
++        c("Grouped Categories", "Independent Categories"),
++        lwd = c(1, 1),
++        col = c("black", "red"),
++        pch = c(16, 3))
+> 
+> set.seed(476)
+> j48FactorFit <- train(x = training[,factorPredictors], 
++                       y = training$Class,
++                       method = "J48",
++                       metric = "ROC",
++                       trControl = ctrl)
+> j48FactorFit
+8190 samples
+1488 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results
+
+  ROC    Sens   Spec 
+  0.835  0.839  0.817
+
+Tuning parameter 'C' was held constant at a value of 0.25
+ 
+> 
+> j48Factor2008 <- merge(j48FactorFit$pred,  j48FactorFit$bestTune)
+> j48FactorCM <- confusionMatrix(j48FactorFit, norm = "none")
+> j48FactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          478          181
+  unsuccessful         92          806
+                                          
+               Accuracy : 0.8247          
+                 95% CI : (0.8048, 0.8432)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6343          
+ Mcnemar's Test P-Value : 1.004e-07       
+                                          
+            Sensitivity : 0.8386          
+            Specificity : 0.8166          
+         Pos Pred Value : 0.7253          
+         Neg Pred Value : 0.8976          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3070          
+   Detection Prevalence : 0.4232          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> j48FactorRoc <- roc(response = j48FactorFit$pred$obs,
++                     predictor = j48FactorFit$pred$successful,
++                     levels = rev(levels(j48FactorFit$pred$obs)))
+> 
+> set.seed(476)
+> j48Fit <- train(x = training[,fullSet], 
++                 y = training$Class,
++                 method = "J48",
++                 metric = "ROC",
++                 trControl = ctrl)
+> 
+> j482008 <- merge(j48Fit$pred,  j48Fit$bestTune)
+> j48CM <- confusionMatrix(j48Fit, norm = "none")
+> j48CM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          438          160
+  unsuccessful        132          827
+                                          
+               Accuracy : 0.8125          
+                 95% CI : (0.7922, 0.8316)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : <2e-16          
+                                          
+                  Kappa : 0.6001          
+ Mcnemar's Test P-Value : 0.1141          
+                                          
+            Sensitivity : 0.7684          
+            Specificity : 0.8379          
+         Pos Pred Value : 0.7324          
+         Neg Pred Value : 0.8624          
+             Prevalence : 0.3661          
+         Detection Rate : 0.2813          
+   Detection Prevalence : 0.3841          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> j48Roc <- roc(response = j48Fit$pred$obs,
++               predictor = j48Fit$pred$successful,
++               levels = rev(levels(j48Fit$pred$obs)))
+> 
+> 
+> plot(j48FactorRoc, type = "s", print.thres = c(.5), 
++      print.thres.pch = 16, print.thres.pattern = "", 
++      print.thres.cex = 1.2, legacy.axes = TRUE)
+
+Call:
+roc.default(response = j48FactorFit$pred$obs, predictor = j48FactorFit$pred$successful,     levels = rev(levels(j48FactorFit$pred$obs)))
+
+Data: j48FactorFit$pred$successful in 987 controls (j48FactorFit$pred$obs unsuccessful) < 570 cases (j48FactorFit$pred$obs successful).
+Area under the curve: 0.8353
+> plot(j48Roc, type = "s", print.thres = c(.5), 
++      print.thres.pch = 3, print.thres.pattern = "", 
++      print.thres.cex = 1.2, legacy.axes = TRUE,
++      add = TRUE, col = "red", print.thres.col = "red")
+
+Call:
+roc.default(response = j48Fit$pred$obs, predictor = j48Fit$pred$successful,     levels = rev(levels(j48Fit$pred$obs)))
+
+Data: j48Fit$pred$successful in 987 controls (j48Fit$pred$obs unsuccessful) < 570 cases (j48Fit$pred$obs successful).
+Area under the curve: 0.842
+> legend(.75, .2,
++        c("Grouped Categories", "Independent Categories"),
++        lwd = c(1, 1),
++        col = c("black", "red"),
++        pch = c(16, 3))
+> 
+> plot(rpartFactorRoc, type = "s", add = TRUE, 
++      col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = rpartFactorFit$pred$obs, predictor = rpartFactorFit$pred$successful,     levels = rev(levels(rpartFactorFit$pred$obs)))
+
+Data: rpartFactorFit$pred$successful in 29610 controls (rpartFactorFit$pred$obs unsuccessful) < 17100 cases (rpartFactorFit$pred$obs successful).
+Area under the curve: 0.8859
+> 
+> ################################################################################
+> ### Section 14.2 Rule-Based Models
+> 
+> set.seed(476)
+> partFit <- train(x = training[,fullSet], 
++                  y = training$Class,
++                  method = "PART",
++                  metric = "ROC",
++                  trControl = ctrl)
+> partFit
+8190 samples
+1070 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results
+
+  ROC    Sens   Spec 
+  0.809  0.779  0.802
+
+Tuning parameter 'threshold' was held constant at a value of 0.25
+
+Tuning parameter 'pruned' was held constant at a value of 'yes'
+ 
+> 
+> part2008 <- merge(partFit$pred,  partFit$bestTune)
+> partCM <- confusionMatrix(partFit, norm = "none")
+> partCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          444          195
+  unsuccessful        126          792
+                                          
+               Accuracy : 0.7938          
+                 95% CI : (0.7729, 0.8137)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5669          
+ Mcnemar's Test P-Value : 0.0001474       
+                                          
+            Sensitivity : 0.7789          
+            Specificity : 0.8024          
+         Pos Pred Value : 0.6948          
+         Neg Pred Value : 0.8627          
+             Prevalence : 0.3661          
+         Detection Rate : 0.2852          
+   Detection Prevalence : 0.4104          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> partRoc <- roc(response = partFit$pred$obs,
++                predictor = partFit$pred$successful,
++                levels = rev(levels(partFit$pred$obs)))
+> partRoc
+
+Call:
+roc.default(response = partFit$pred$obs, predictor = partFit$pred$successful,     levels = rev(levels(partFit$pred$obs)))
+
+Data: partFit$pred$successful in 987 controls (partFit$pred$obs unsuccessful) < 570 cases (partFit$pred$obs successful).
+Area under the curve: 0.809
+> 
+> set.seed(476)
+> partFactorFit <- train(training[,factorPredictors], training$Class,
++                        method = "PART",
++                        metric = "ROC",
++                        trControl = ctrl)
+> partFactorFit
+8190 samples
+1488 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results
+
+  ROC    Sens   Spec 
+  0.835  0.807  0.766
+
+Tuning parameter 'threshold' was held constant at a value of 0.25
+
+Tuning parameter 'pruned' was held constant at a value of 'yes'
+ 
+> 
+> partFactor2008 <- merge(partFactorFit$pred,  partFactorFit$bestTune)
+> partFactorCM <- confusionMatrix(partFactorFit, norm = "none")
+> partFactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          460          231
+  unsuccessful        110          756
+                                          
+               Accuracy : 0.781           
+                 95% CI : (0.7596, 0.8013)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.5484          
+ Mcnemar's Test P-Value : 8.12e-11        
+                                          
+            Sensitivity : 0.8070          
+            Specificity : 0.7660          
+         Pos Pred Value : 0.6657          
+         Neg Pred Value : 0.8730          
+             Prevalence : 0.3661          
+         Detection Rate : 0.2954          
+   Detection Prevalence : 0.4438          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> partFactorRoc <- roc(response = partFactorFit$pred$obs,
++                      predictor = partFactorFit$pred$successful,
++                      levels = rev(levels(partFactorFit$pred$obs)))
+> partFactorRoc
+
+Call:
+roc.default(response = partFactorFit$pred$obs, predictor = partFactorFit$pred$successful,     levels = rev(levels(partFactorFit$pred$obs)))
+
+Data: partFactorFit$pred$successful in 987 controls (partFactorFit$pred$obs unsuccessful) < 570 cases (partFactorFit$pred$obs successful).
+Area under the curve: 0.8347
+> 
+> ################################################################################
+> ### Section 14.3 Bagged Trees
+> 
+> set.seed(476)
+> treebagFit <- train(x = training[,fullSet], 
++                     y = training$Class,
++                     method = "treebag",
++                     nbagg = 50,
++                     metric = "ROC",
++                     trControl = ctrl)
+Loading required package: MASS
+Loading required package: survival
+Loading required package: splines
+Loading required package: nnet
+Loading required package: prodlim
+Loading required package: KernSmooth
+KernSmooth 2.23 loaded
+Copyright M. P. Wand 1997-2009
+randomForest 4.6-7
+Type rfNews() to see new features/changes/bug fixes.
+Warning message:
+In data.frame(..., check.names = FALSE) :
+  row names were found from a short variable and have been discarded
+> treebagFit
+8190 samples
+1070 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results
+
+  ROC    Sens  Spec 
+  0.921  0.83  0.857
+
+ 
+> 
+> treebag2008 <- merge(treebagFit$pred,  treebagFit$bestTune)
+> treebagCM <- confusionMatrix(treebagFit, norm = "none")
+> treebagCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          473          141
+  unsuccessful         97          846
+                                          
+               Accuracy : 0.8471          
+                 95% CI : (0.8283, 0.8647)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6759          
+ Mcnemar's Test P-Value : 0.005315        
+                                          
+            Sensitivity : 0.8298          
+            Specificity : 0.8571          
+         Pos Pred Value : 0.7704          
+         Neg Pred Value : 0.8971          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3038          
+   Detection Prevalence : 0.3943          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> treebagRoc <- roc(response = treebagFit$pred$obs,
++                   predictor = treebagFit$pred$successful,
++                   levels = rev(levels(treebagFit$pred$obs)))
+> set.seed(476)
+> treebagFactorFit <- train(x = training[,factorPredictors], 
++                           y = training$Class,
++                           method = "treebag",
++                           nbagg = 50,
++                           metric = "ROC",
++                           trControl = ctrl)
+Warning message:
+In data.frame(..., check.names = FALSE) :
+  row names were found from a short variable and have been discarded
+> treebagFactorFit
+8190 samples
+1488 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results
+
+  ROC    Sens   Spec
+  0.917  0.835  0.86
+
+ 
+> 
+> treebagFactor2008 <- merge(treebagFactorFit$pred,  treebagFactorFit$bestTune)
+> treebagFactorCM <- confusionMatrix(treebagFactorFit, norm = "none")
+> treebagFactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          476          138
+  unsuccessful         94          849
+                                          
+               Accuracy : 0.851           
+                 95% CI : (0.8323, 0.8683)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6841          
+ Mcnemar's Test P-Value : 0.004756        
+                                          
+            Sensitivity : 0.8351          
+            Specificity : 0.8602          
+         Pos Pred Value : 0.7752          
+         Neg Pred Value : 0.9003          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3057          
+   Detection Prevalence : 0.3943          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> treebagFactorRoc <- roc(response = treebagFactorFit$pred$obs,
++                         predictor = treebagFactorFit$pred$successful,
++                         levels = rev(levels(treebagFactorFit$pred$obs)))
+> 
+> 
+> plot(rpartRoc, type = "s", col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = rpartFit$pred$obs, predictor = rpartFit$pred$successful,     levels = rev(levels(rpartFit$pred$obs)))
+
+Data: rpartFit$pred$successful in 29610 controls (rpartFit$pred$obs unsuccessful) < 17100 cases (rpartFit$pred$obs successful).
+Area under the curve: 0.8915
+> plot(j48FactorRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), 
++      legacy.axes = TRUE)
+
+Call:
+roc.default(response = j48FactorFit$pred$obs, predictor = j48FactorFit$pred$successful,     levels = rev(levels(j48FactorFit$pred$obs)))
+
+Data: j48FactorFit$pred$successful in 987 controls (j48FactorFit$pred$obs unsuccessful) < 570 cases (j48FactorFit$pred$obs successful).
+Area under the curve: 0.8353
+> plot(treebagRoc, type = "s", add = TRUE, print.thres = c(.5), 
++      print.thres.pch = 3, legacy.axes = TRUE, print.thres.pattern = "", 
++      print.thres.cex = 1.2,
++      col = "red", print.thres.col = "red")
+
+Call:
+roc.default(response = treebagFit$pred$obs, predictor = treebagFit$pred$successful,     levels = rev(levels(treebagFit$pred$obs)))
+
+Data: treebagFit$pred$successful in 987 controls (treebagFit$pred$obs unsuccessful) < 570 cases (treebagFit$pred$obs successful).
+Area under the curve: 0.9205
+> plot(treebagFactorRoc, type = "s", add = TRUE, print.thres = c(.5), 
++      print.thres.pch = 16, print.thres.pattern = "", legacy.axes = TRUE, 
++      print.thres.cex = 1.2)
+
+Call:
+roc.default(response = treebagFactorFit$pred$obs, predictor = treebagFactorFit$pred$successful,     levels = rev(levels(treebagFactorFit$pred$obs)))
+
+Data: treebagFactorFit$pred$successful in 987 controls (treebagFactorFit$pred$obs unsuccessful) < 570 cases (treebagFactorFit$pred$obs successful).
+Area under the curve: 0.9172
+> legend(.75, .2,
++        c("Grouped Categories", "Independent Categories"),
++        lwd = c(1, 1),
++        col = c("black", "red"),
++        pch = c(16, 3))
+> 
+> ################################################################################
+> ### Section 14.4 Random Forests
+> 
+> ### For the book, this model was run with only 500 trees (by
+> ### accident). More than 1000 trees usually required to get consistent
+> ### results.
+> 
+> mtryValues <- c(5, 10, 20, 32, 50, 100, 250, 500, 1000)
+> set.seed(476)
+> rfFit <- train(x = training[,fullSet], 
++                y = training$Class,
++                method = "rf",
++                ntree = 500,
++                tuneGrid = data.frame(.mtry = mtryValues),
++                importance = TRUE,
++                metric = "ROC",
++                trControl = ctrl)
+> rfFit
+8190 samples
+1070 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  mtry  ROC    Sens   Spec 
+  5     0.876  0.805  0.769
+  10    0.901  0.828  0.812
+  20    0.924  0.861  0.827
+  32    0.931  0.879  0.835
+  50    0.936  0.877  0.835
+  100   0.939  0.867  0.846
+  250   0.937  0.856  0.858
+  500   0.93   0.844  0.862
+  1000  0.923  0.837  0.853
+
+ROC was used to select the optimal model using  the largest value.
+The final value used for the model was mtry = 100. 
+> 
+> rf2008 <- merge(rfFit$pred,  rfFit$bestTune)
+> rfCM <- confusionMatrix(rfFit, norm = "none")
+> rfCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          494          152
+  unsuccessful         76          835
+                                         
+               Accuracy : 0.8536         
+                 95% CI : (0.835, 0.8708)
+    No Information Rate : 0.6339         
+    P-Value [Acc > NIR] : < 2e-16        
+                                         
+                  Kappa : 0.6931         
+ Mcnemar's Test P-Value : 6.8e-07        
+                                         
+            Sensitivity : 0.8667         
+            Specificity : 0.8460         
+         Pos Pred Value : 0.7647         
+         Neg Pred Value : 0.9166         
+             Prevalence : 0.3661         
+         Detection Rate : 0.3173         
+   Detection Prevalence : 0.4149         
+                                         
+       'Positive' Class : successful     
+                                         
+
+> 
+> rfRoc <- roc(response = rfFit$pred$obs,
++              predictor = rfFit$pred$successful,
++              levels = rev(levels(rfFit$pred$obs)))
+> 
+> gc()
+             used    (Mb) gc trigger    (Mb)   max used    (Mb)
+Ncells    9449658   504.7   14710401   785.7   14710401   785.7
+Vcells 4987242000 38049.7 7328697247 55913.6 6330584858 48298.6
+> 
+> ## The randomForest package cannot handle factors with more than 32
+> ## levels, so we make a new set of predictors where the sponsor code
+> ## factor is entered as dummy variables instead of a single factor. 
+> 
+> sponsorVars <- grep("Sponsor", names(training), value = TRUE)
+> sponsorVars <- sponsorVars[sponsorVars != "SponsorCode"]
+> 
+> rfPredictors <- factorPredictors
+> rfPredictors <- rfPredictors[rfPredictors != "SponsorCode"]
+> rfPredictors <- c(rfPredictors, sponsorVars)
+> 
+> set.seed(476)
+> rfFactorFit <- train(x = training[,rfPredictors], 
++                      y = training$Class,
++                      method = "rf",
++                      ntree = 1500,
++                      tuneGrid = data.frame(.mtry = mtryValues),
++                      importance = TRUE,
++                      metric = "ROC",
++                      trControl = ctrl)
+> rfFactorFit
+8190 samples
+1733 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  mtry  ROC    Sens   Spec 
+  5     0.808  0.619  0.817
+  10    0.855  0.726  0.815
+  20    0.891  0.754  0.84 
+  32    0.911  0.774  0.855
+  50    0.921  0.802  0.865
+  100   0.93   0.823  0.87 
+  250   0.937  0.842  0.871
+  500   0.936  0.847  0.876
+  1000  0.931  0.837  0.872
+
+ROC was used to select the optimal model using  the largest value.
+The final value used for the model was mtry = 250. 
+> 
+> rfFactor2008 <- merge(rfFactorFit$pred,  rfFactorFit$bestTune)
+> rfFactorCM <- confusionMatrix(rfFactorFit, norm = "none")
+> rfFactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          480          127
+  unsuccessful         90          860
+                                          
+               Accuracy : 0.8606          
+                 95% CI : (0.8424, 0.8775)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2e-16         
+                                          
+                  Kappa : 0.7038          
+ Mcnemar's Test P-Value : 0.01453         
+                                          
+            Sensitivity : 0.8421          
+            Specificity : 0.8713          
+         Pos Pred Value : 0.7908          
+         Neg Pred Value : 0.9053          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3083          
+   Detection Prevalence : 0.3899          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> rfFactorRoc <- roc(response = rfFactorFit$pred$obs,
++                    predictor = rfFactorFit$pred$successful,
++                    levels = rev(levels(rfFactorFit$pred$obs)))
+> 
+> plot(treebagRoc, type = "s", col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = treebagFit$pred$obs, predictor = treebagFit$pred$successful,     levels = rev(levels(treebagFit$pred$obs)))
+
+Data: treebagFit$pred$successful in 987 controls (treebagFit$pred$obs unsuccessful) < 570 cases (treebagFit$pred$obs successful).
+Area under the curve: 0.9205
+> plot(rpartRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = rpartFit$pred$obs, predictor = rpartFit$pred$successful,     levels = rev(levels(rpartFit$pred$obs)))
+
+Data: rpartFit$pred$successful in 29610 controls (rpartFit$pred$obs unsuccessful) < 17100 cases (rpartFit$pred$obs successful).
+Area under the curve: 0.8915
+> plot(j48FactorRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), 
++      legacy.axes = TRUE)
+
+Call:
+roc.default(response = j48FactorFit$pred$obs, predictor = j48FactorFit$pred$successful,     levels = rev(levels(j48FactorFit$pred$obs)))
+
+Data: j48FactorFit$pred$successful in 987 controls (j48FactorFit$pred$obs unsuccessful) < 570 cases (j48FactorFit$pred$obs successful).
+Area under the curve: 0.8353
+> plot(rfRoc, type = "s", add = TRUE, print.thres = c(.5), 
++      print.thres.pch = 3, legacy.axes = TRUE, print.thres.pattern = "", 
++      print.thres.cex = 1.2,
++      col = "red", print.thres.col = "red")
+
+Call:
+roc.default(response = rfFit$pred$obs, predictor = rfFit$pred$successful,     levels = rev(levels(rfFit$pred$obs)))
+
+Data: rfFit$pred$successful in 8883 controls (rfFit$pred$obs unsuccessful) < 5130 cases (rfFit$pred$obs successful).
+Area under the curve: 0.9179
+> plot(rfFactorRoc, type = "s", add = TRUE, print.thres = c(.5), 
++      print.thres.pch = 16, print.thres.pattern = "", legacy.axes = TRUE, 
++      print.thres.cex = 1.2)
+
+Call:
+roc.default(response = rfFactorFit$pred$obs, predictor = rfFactorFit$pred$successful,     levels = rev(levels(rfFactorFit$pred$obs)))
+
+Data: rfFactorFit$pred$successful in 8883 controls (rfFactorFit$pred$obs unsuccessful) < 5130 cases (rfFactorFit$pred$obs successful).
+Area under the curve: 0.9049
+> legend(.75, .2,
++        c("Grouped Categories", "Independent Categories"),
++        lwd = c(1, 1),
++        col = c("black", "red"),
++        pch = c(16, 3))
+> 
+> 
+> ################################################################################
+> ### Section 14.5 Boosting
+> 
+> gbmGrid <- expand.grid(.interaction.depth = c(1, 3, 5, 7, 9),
++                        .n.trees = (1:20)*100,
++                        .shrinkage = c(.01, .1))
+> 
+> set.seed(476)
+> gbmFit <- train(x = training[,fullSet], 
++                 y = training$Class,
++                 method = "gbm",
++                 tuneGrid = gbmGrid,
++                 metric = "ROC",
++                 verbose = FALSE,
++                 trControl = ctrl)
+Loaded gbm 1.6.3.2
+
+There were 50 or more warnings (use warnings() to see the first 50)
+> gbmFit
+8190 samples
+1070 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  interaction.depth  n.trees  shrinkage  ROC    Sens   Spec 
+  1                  100      0.01       0.879  0.947  0.73 
+  1                  100      0.1        0.914  0.902  0.801
+  1                  200      0.01       0.887  0.947  0.73 
+  1                  200      0.1        0.919  0.818  0.851
+  1                  300      0.01       0.888  0.951  0.73 
+  1                  300      0.1        0.922  0.832  0.857
+  1                  400      0.01       0.91   0.951  0.73 
+  1                  400      0.1        0.921  0.821  0.859
+  1                  500      0.01       0.909  0.951  0.73 
+  1                  500      0.1        0.923  0.828  0.857
+  1                  600      0.01       0.908  0.904  0.8  
+  1                  600      0.1        0.922  0.816  0.865
+  1                  700      0.01       0.912  0.905  0.799
+  1                  700      0.1        0.922  0.812  0.871
+  1                  800      0.01       0.91   0.905  0.798
+  1                  800      0.1        0.921  0.816  0.869
+  1                  900      0.01       0.913  0.905  0.798
+  1                  900      0.1        0.919  0.812  0.865
+  1                  1000     0.01       0.915  0.904  0.798
+  1                  1000     0.1        0.919  0.816  0.864
+  1                  1100     0.01       0.915  0.902  0.804
+  1                  1100     0.1        0.918  0.812  0.866
+  1                  1200     0.01       0.915  0.893  0.816
+  1                  1200     0.1        0.916  0.807  0.866
+  1                  1300     0.01       0.916  0.889  0.816
+  1                  1300     0.1        0.916  0.812  0.866
+  1                  1400     0.01       0.916  0.888  0.82 
+  1                  1400     0.1        0.916  0.814  0.867
+  1                  1500     0.01       0.918  0.872  0.825
+  1                  1500     0.1        0.915  0.811  0.866
+  1                  1600     0.01       0.919  0.877  0.827
+  1                  1600     0.1        0.914  0.811  0.866
+  1                  1700     0.01       0.919  0.844  0.843
+  1                  1700     0.1        0.913  0.807  0.868
+  1                  1800     0.01       0.92   0.853  0.845
+  1                  1800     0.1        0.913  0.812  0.866
+  1                  1900     0.01       0.92   0.84   0.85 
+  1                  1900     0.1        0.913  0.807  0.87 
+  1                  2000     0.01       0.921  0.837  0.854
+  1                  2000     0.1        0.912  0.818  0.866
+  3                  100      0.01       0.913  0.947  0.729
+  3                  100      0.1        0.928  0.853  0.857
+  3                  200      0.01       0.914  0.898  0.801
+  3                  200      0.1        0.931  0.839  0.869
+  3                  300      0.01       0.918  0.889  0.809
+  3                  300      0.1        0.932  0.839  0.872
+  3                  400      0.01       0.92   0.891  0.809
+  3                  400      0.1        0.933  0.835  0.875
+  3                  500      0.01       0.923  0.886  0.816
+  3                  500      0.1        0.932  0.83   0.876
+  3                  600      0.01       0.924  0.884  0.828
+  3                  600      0.1        0.931  0.833  0.873
+  3                  700      0.01       0.926  0.868  0.837
+  3                  700      0.1        0.932  0.844  0.875
+  3                  800      0.01       0.927  0.867  0.842
+  3                  800      0.1        0.93   0.844  0.874
+  3                  900      0.01       0.929  0.867  0.844
+  3                  900      0.1        0.93   0.833  0.88 
+  3                  1000     0.01       0.929  0.865  0.849
+  3                  1000     0.1        0.931  0.833  0.879
+  3                  1100     0.01       0.93   0.867  0.857
+  3                  1100     0.1        0.93   0.825  0.881
+  3                  1200     0.01       0.931  0.863  0.857
+  3                  1200     0.1        0.929  0.818  0.877
+  3                  1300     0.01       0.931  0.863  0.858
+  3                  1300     0.1        0.929  0.821  0.881
+  3                  1400     0.01       0.931  0.858  0.862
+  3                  1400     0.1        0.928  0.832  0.877
+  3                  1500     0.01       0.931  0.856  0.861
+  3                  1500     0.1        0.928  0.833  0.875
+  3                  1600     0.01       0.932  0.858  0.863
+  3                  1600     0.1        0.929  0.832  0.875
+  3                  1700     0.01       0.932  0.854  0.863
+  3                  1700     0.1        0.927  0.816  0.873
+  3                  1800     0.01       0.933  0.856  0.865
+  3                  1800     0.1        0.926  0.818  0.876
+  3                  1900     0.01       0.933  0.847  0.866
+  3                  1900     0.1        0.926  0.819  0.872
+  3                  2000     0.01       0.933  0.851  0.865
+  3                  2000     0.1        0.927  0.818  0.876
+  5                  100      0.01       0.92   0.947  0.726
+  5                  100      0.1        0.93   0.86   0.856
+  5                  200      0.01       0.918  0.896  0.8  
+  5                  200      0.1        0.929  0.826  0.875
+  5                  300      0.01       0.923  0.895  0.81 
+  5                  300      0.1        0.927  0.812  0.88 
+  5                  400      0.01       0.929  0.891  0.829
+  5                  400      0.1        0.927  0.812  0.878
+  5                  500      0.01       0.931  0.872  0.844
+  5                  500      0.1        0.927  0.821  0.876
+  5                  600      0.01       0.932  0.865  0.85 
+  5                  600      0.1        0.926  0.809  0.872
+  5                  700      0.01       0.933  0.867  0.854
+  5                  700      0.1        0.925  0.805  0.873
+  5                  800      0.01       0.933  0.863  0.855
+  5                  800      0.1        0.922  0.788  0.872
+  5                  900      0.01       0.934  0.863  0.858
+  5                  900      0.1        0.921  0.795  0.875
+  5                  1000     0.01       0.934  0.856  0.86 
+  5                  1000     0.1        0.921  0.795  0.875
+  5                  1100     0.01       0.934  0.851  0.864
+  5                  1100     0.1        0.92   0.788  0.876
+  5                  1200     0.01       0.934  0.847  0.866
+  5                  1200     0.1        0.918  0.786  0.876
+  5                  1300     0.01       0.934  0.849  0.865
+  5                  1300     0.1        0.919  0.786  0.875
+  5                  1400     0.01       0.935  0.846  0.866
+  5                  1400     0.1        0.919  0.782  0.877
+  5                  1500     0.01       0.935  0.844  0.869
+  5                  1500     0.1        0.918  0.784  0.878
+  5                  1600     0.01       0.935  0.84   0.867
+  5                  1600     0.1        0.918  0.784  0.877
+  5                  1700     0.01       0.935  0.846  0.871
+  5                  1700     0.1        0.918  0.795  0.875
+  5                  1800     0.01       0.935  0.846  0.872
+  5                  1800     0.1        0.918  0.789  0.879
+  5                  1900     0.01       0.935  0.842  0.872
+  5                  1900     0.1        0.917  0.781  0.873
+  5                  2000     0.01       0.935  0.844  0.874
+  5                  2000     0.1        0.918  0.782  0.874
+  7                  100      0.01       0.916  0.893  0.798
+  7                  100      0.1        0.935  0.844  0.873
+  7                  200      0.01       0.922  0.902  0.799
+  7                  200      0.1        0.934  0.825  0.888
+  7                  300      0.01       0.928  0.902  0.828
+  7                  300      0.1        0.934  0.832  0.882
+  7                  400      0.01       0.932  0.877  0.839
+  7                  400      0.1        0.931  0.819  0.882
+  7                  500      0.01       0.933  0.872  0.85 
+  7                  500      0.1        0.931  0.809  0.881
+  7                  600      0.01       0.933  0.867  0.854
+  7                  600      0.1        0.931  0.807  0.88 
+  7                  700      0.01       0.934  0.867  0.859
+  7                  700      0.1        0.931  0.814  0.88 
+  7                  800      0.01       0.934  0.863  0.863
+  7                  800      0.1        0.931  0.8    0.881
+  7                  900      0.01       0.934  0.86   0.864
+  7                  900      0.1        0.93   0.814  0.881
+  7                  1000     0.01       0.935  0.863  0.866
+  7                  1000     0.1        0.929  0.8    0.881
+  7                  1100     0.01       0.935  0.856  0.869
+  7                  1100     0.1        0.929  0.798  0.886
+  7                  1200     0.01       0.935  0.853  0.871
+  7                  1200     0.1        0.93   0.791  0.881
+  7                  1300     0.01       0.935  0.846  0.876
+  7                  1300     0.1        0.93   0.8    0.881
+  7                  1400     0.01       0.935  0.839  0.875
+  7                  1400     0.1        0.93   0.802  0.884
+  7                  1500     0.01       0.935  0.837  0.875
+  7                  1500     0.1        0.93   0.809  0.879
+  7                  1600     0.01       0.935  0.839  0.876
+  7                  1600     0.1        0.93   0.804  0.878
+  7                  1700     0.01       0.935  0.839  0.878
+  7                  1700     0.1        0.928  0.804  0.88 
+  7                  1800     0.01       0.935  0.835  0.878
+  7                  1800     0.1        0.928  0.8    0.881
+  7                  1900     0.01       0.935  0.835  0.88 
+  7                  1900     0.1        0.928  0.8    0.887
+  7                  2000     0.01       0.934  0.826  0.879
+  7                  2000     0.1        0.929  0.795  0.883
+  9                  100      0.01       0.919  0.896  0.801
+  9                  100      0.1        0.935  0.84   0.872
+  9                  200      0.01       0.926  0.904  0.818
+  9                  200      0.1        0.933  0.816  0.878
+  9                  300      0.01       0.929  0.875  0.839
+  9                  300      0.1        0.932  0.811  0.879
+  9                  400      0.01       0.932  0.863  0.852
+  9                  400      0.1        0.93   0.802  0.877
+  9                  500      0.01       0.933  0.861  0.858
+  9                  500      0.1        0.93   0.814  0.881
+  9                  600      0.01       0.934  0.853  0.862
+  9                  600      0.1        0.928  0.809  0.881
+  9                  700      0.01       0.935  0.851  0.865
+  9                  700      0.1        0.93   0.805  0.876
+  9                  800      0.01       0.935  0.844  0.867
+  9                  800      0.1        0.929  0.802  0.881
+  9                  900      0.01       0.935  0.842  0.866
+  9                  900      0.1        0.929  0.793  0.879
+  9                  1000     0.01       0.936  0.842  0.871
+  9                  1000     0.1        0.928  0.793  0.874
+  9                  1100     0.01       0.935  0.84   0.875
+  9                  1100     0.1        0.929  0.796  0.872
+  9                  1200     0.01       0.935  0.833  0.877
+  9                  1200     0.1        0.927  0.796  0.873
+  9                  1300     0.01       0.935  0.832  0.877
+  9                  1300     0.1        0.928  0.795  0.872
+  9                  1400     0.01       0.936  0.832  0.877
+  9                  1400     0.1        0.927  0.8    0.87 
+  9                  1500     0.01       0.935  0.833  0.876
+  9                  1500     0.1        0.928  0.804  0.873
+  9                  1600     0.01       0.935  0.83   0.877
+  9                  1600     0.1        0.929  0.802  0.876
+  9                  1700     0.01       0.935  0.825  0.875
+  9                  1700     0.1        0.929  0.802  0.876
+  9                  1800     0.01       0.935  0.826  0.878
+  9                  1800     0.1        0.929  0.798  0.874
+  9                  1900     0.01       0.935  0.828  0.877
+  9                  1900     0.1        0.928  0.795  0.874
+  9                  2000     0.01       0.935  0.826  0.875
+  9                  2000     0.1        0.927  0.789  0.88 
+
+ROC was used to select the optimal model using  the largest value.
+The final values used for the model were interaction.depth = 9, n.trees =
+ 1400 and shrinkage = 0.01. 
+> 
+> gbmFit$pred <- merge(gbmFit$pred,  gbmFit$bestTune)
+> gbmCM <- confusionMatrix(gbmFit, norm = "none")
+> gbmCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          474          121
+  unsuccessful         96          866
+                                          
+               Accuracy : 0.8606          
+                 95% CI : (0.8424, 0.8775)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : <2e-16          
+                                          
+                  Kappa : 0.7025          
+ Mcnemar's Test P-Value : 0.1033          
+                                          
+            Sensitivity : 0.8316          
+            Specificity : 0.8774          
+         Pos Pred Value : 0.7966          
+         Neg Pred Value : 0.9002          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3044          
+   Detection Prevalence : 0.3821          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> gbmRoc <- roc(response = gbmFit$pred$obs,
++               predictor = gbmFit$pred$successful,
++               levels = rev(levels(gbmFit$pred$obs)))
+> 
+> set.seed(476)
+> gbmFactorFit <- train(x = training[,factorPredictors], 
++                       y = training$Class,
++                       method = "gbm",
++                       tuneGrid = gbmGrid,
++                       verbose = FALSE,
++                       metric = "ROC",
++                       trControl = ctrl)
+There were 50 or more warnings (use warnings() to see the first 50)
+> gbmFactorFit
+8190 samples
+1488 predictors
+   2 classes: 'successful', 'unsuccessful' 
+
+No pre-processing
+Resampling: Repeated Train/Test Splits (1 reps, 0.75%) 
+
+Summary of sample sizes: 6633 
+
+Resampling results across tuning parameters:
+
+  interaction.depth  n.trees  shrinkage  ROC    Sens   Spec 
+  1                  100      0.01       0.881  0.658  0.797
+  1                  100      0.1        0.882  0.891  0.8  
+  1                  200      0.01       0.886  0.872  0.821
+  1                  200      0.1        0.865  0.888  0.801
+  1                  300      0.01       0.887  0.882  0.824
+  1                  300      0.1        0.857  0.891  0.798
+  1                  400      0.01       0.888  0.886  0.8  
+  1                  400      0.1        0.858  0.882  0.802
+  1                  500      0.01       0.886  0.886  0.8  
+  1                  500      0.1        0.858  0.884  0.801
+  1                  600      0.01       0.883  0.888  0.799
+  1                  600      0.1        0.859  0.888  0.801
+  1                  700      0.01       0.883  0.888  0.799
+  1                  700      0.1        0.858  0.884  0.804
+  1                  800      0.01       0.881  0.888  0.799
+  1                  800      0.1        0.857  0.886  0.799
+  1                  900      0.01       0.883  0.884  0.8  
+  1                  900      0.1        0.857  0.884  0.797
+  1                  1000     0.01       0.884  0.884  0.8  
+  1                  1000     0.1        0.856  0.886  0.8  
+  1                  1100     0.01       0.885  0.884  0.801
+  1                  1100     0.1        0.857  0.886  0.801
+  1                  1200     0.01       0.883  0.882  0.802
+  1                  1200     0.1        0.856  0.889  0.801
+  1                  1300     0.01       0.88   0.882  0.8  
+  1                  1300     0.1        0.856  0.891  0.804
+  1                  1400     0.01       0.877  0.882  0.801
+  1                  1400     0.1        0.855  0.886  0.801
+  1                  1500     0.01       0.873  0.884  0.8  
+  1                  1500     0.1        0.855  0.882  0.804
+  1                  1600     0.01       0.87   0.882  0.8  
+  1                  1600     0.1        0.855  0.884  0.807
+  1                  1700     0.01       0.869  0.881  0.802
+  1                  1700     0.1        0.856  0.888  0.801
+  1                  1800     0.01       0.867  0.884  0.804
+  1                  1800     0.1        0.855  0.882  0.811
+  1                  1900     0.01       0.866  0.884  0.803
+  1                  1900     0.1        0.855  0.881  0.807
+  1                  2000     0.01       0.864  0.884  0.803
+  1                  2000     0.1        0.855  0.888  0.811
+  3                  100      0.01       0.907  0.884  0.792
+  3                  100      0.1        0.875  0.886  0.799
+  3                  200      0.01       0.909  0.886  0.793
+  3                  200      0.1        0.873  0.882  0.813
+  3                  300      0.01       0.905  0.886  0.795
+  3                  300      0.1        0.872  0.891  0.81 
+  3                  400      0.01       0.902  0.884  0.799
+  3                  400      0.1        0.872  0.889  0.809
+  3                  500      0.01       0.894  0.884  0.796
+  3                  500      0.1        0.871  0.888  0.812
+  3                  600      0.01       0.888  0.884  0.797
+  3                  600      0.1        0.87   0.893  0.812
+  3                  700      0.01       0.881  0.884  0.8  
+  3                  700      0.1        0.87   0.888  0.811
+  3                  800      0.01       0.878  0.886  0.803
+  3                  800      0.1        0.87   0.889  0.81 
+  3                  900      0.01       0.874  0.888  0.804
+  3                  900      0.1        0.869  0.881  0.813
+  3                  1000     0.01       0.873  0.886  0.802
+  3                  1000     0.1        0.869  0.879  0.815
+  3                  1100     0.01       0.872  0.886  0.805
+  3                  1100     0.1        0.869  0.879  0.814
+  3                  1200     0.01       0.872  0.884  0.806
+  3                  1200     0.1        0.868  0.884  0.811
+  3                  1300     0.01       0.872  0.881  0.807
+  3                  1300     0.1        0.868  0.872  0.812
+  3                  1400     0.01       0.872  0.882  0.806
+  3                  1400     0.1        0.867  0.877  0.807
+  3                  1500     0.01       0.872  0.881  0.807
+  3                  1500     0.1        0.865  0.874  0.811
+  3                  1600     0.01       0.872  0.882  0.809
+  3                  1600     0.1        0.865  0.881  0.81 
+  3                  1700     0.01       0.872  0.881  0.81 
+  3                  1700     0.1        0.864  0.877  0.812
+  3                  1800     0.01       0.872  0.888  0.81 
+  3                  1800     0.1        0.865  0.879  0.812
+  3                  1900     0.01       0.872  0.884  0.807
+  3                  1900     0.1        0.865  0.879  0.815
+  3                  2000     0.01       0.873  0.881  0.81 
+  3                  2000     0.1        0.864  0.87   0.817
+  5                  100      0.01       0.909  0.86   0.805
+  5                  100      0.1        0.873  0.879  0.807
+  5                  200      0.01       0.906  0.875  0.792
+  5                  200      0.1        0.872  0.891  0.8  
+  5                  300      0.01       0.899  0.879  0.799
+  5                  300      0.1        0.871  0.875  0.814
+  5                  400      0.01       0.894  0.882  0.798
+  5                  400      0.1        0.87   0.882  0.806
+  5                  500      0.01       0.886  0.882  0.798
+  5                  500      0.1        0.868  0.879  0.806
+  5                  600      0.01       0.881  0.882  0.801
+  5                  600      0.1        0.869  0.87   0.807
+  5                  700      0.01       0.878  0.879  0.802
+  5                  700      0.1        0.868  0.875  0.809
+  5                  800      0.01       0.877  0.879  0.803
+  5                  800      0.1        0.866  0.881  0.811
+  5                  900      0.01       0.876  0.877  0.803
+  5                  900      0.1        0.865  0.879  0.805
+  5                  1000     0.01       0.876  0.879  0.806
+  5                  1000     0.1        0.865  0.879  0.806
+  5                  1100     0.01       0.876  0.879  0.806
+  5                  1100     0.1        0.864  0.868  0.81 
+  5                  1200     0.01       0.876  0.881  0.809
+  5                  1200     0.1        0.863  0.877  0.807
+  5                  1300     0.01       0.876  0.879  0.806
+  5                  1300     0.1        0.863  0.879  0.806
+  5                  1400     0.01       0.876  0.882  0.806
+  5                  1400     0.1        0.863  0.875  0.805
+  5                  1500     0.01       0.876  0.884  0.809
+  5                  1500     0.1        0.862  0.879  0.802
+  5                  1600     0.01       0.876  0.881  0.806
+  5                  1600     0.1        0.862  0.872  0.806
+  5                  1700     0.01       0.876  0.882  0.806
+  5                  1700     0.1        0.862  0.879  0.809
+  5                  1800     0.01       0.876  0.882  0.809
+  5                  1800     0.1        0.862  0.877  0.807
+  5                  1900     0.01       0.876  0.879  0.805
+  5                  1900     0.1        0.862  0.875  0.809
+  5                  2000     0.01       0.876  0.882  0.804
+  5                  2000     0.1        0.861  0.879  0.803
+  7                  100      0.01       0.917  0.882  0.78 
+  7                  100      0.1        0.876  0.893  0.809
+  7                  200      0.01       0.904  0.879  0.797
+  7                  200      0.1        0.873  0.879  0.804
+  7                  300      0.01       0.896  0.881  0.797
+  7                  300      0.1        0.87   0.882  0.799
+  7                  400      0.01       0.886  0.875  0.804
+  7                  400      0.1        0.868  0.882  0.798
+  7                  500      0.01       0.88   0.877  0.804
+  7                  500      0.1        0.864  0.879  0.8  
+  7                  600      0.01       0.878  0.875  0.803
+  7                  600      0.1        0.863  0.879  0.804
+  7                  700      0.01       0.876  0.877  0.806
+  7                  700      0.1        0.863  0.87   0.802
+  7                  800      0.01       0.876  0.877  0.807
+  7                  800      0.1        0.863  0.872  0.802
+  7                  900      0.01       0.876  0.879  0.813
+  7                  900      0.1        0.863  0.874  0.801
+  7                  1000     0.01       0.876  0.879  0.811
+  7                  1000     0.1        0.862  0.868  0.8  
+  7                  1100     0.01       0.875  0.875  0.81 
+  7                  1100     0.1        0.861  0.863  0.794
+  7                  1200     0.01       0.875  0.875  0.811
+  7                  1200     0.1        0.862  0.861  0.793
+  7                  1300     0.01       0.875  0.874  0.811
+  7                  1300     0.1        0.861  0.863  0.796
+  7                  1400     0.01       0.875  0.875  0.811
+  7                  1400     0.1        0.86   0.861  0.797
+  7                  1500     0.01       0.875  0.875  0.811
+  7                  1500     0.1        0.86   0.867  0.796
+  7                  1600     0.01       0.875  0.874  0.811
+  7                  1600     0.1        0.859  0.861  0.799
+  7                  1700     0.01       0.875  0.875  0.807
+  7                  1700     0.1        0.859  0.87   0.797
+  7                  1800     0.01       0.875  0.875  0.806
+  7                  1800     0.1        0.86   0.863  0.801
+  7                  1900     0.01       0.875  0.875  0.807
+  7                  1900     0.1        0.86   0.868  0.799
+  7                  2000     0.01       0.875  0.877  0.811
+  7                  2000     0.1        0.859  0.858  0.796
+  9                  100      0.01       0.913  0.882  0.789
+  9                  100      0.1        0.872  0.874  0.811
+  9                  200      0.01       0.904  0.881  0.789
+  9                  200      0.1        0.868  0.872  0.801
+  9                  300      0.01       0.893  0.879  0.795
+  9                  300      0.1        0.866  0.872  0.806
+  9                  400      0.01       0.883  0.881  0.804
+  9                  400      0.1        0.865  0.868  0.8  
+  9                  500      0.01       0.879  0.881  0.806
+  9                  500      0.1        0.863  0.872  0.801
+  9                  600      0.01       0.877  0.879  0.806
+  9                  600      0.1        0.861  0.879  0.803
+  9                  700      0.01       0.876  0.881  0.811
+  9                  700      0.1        0.861  0.874  0.8  
+  9                  800      0.01       0.876  0.881  0.811
+  9                  800      0.1        0.861  0.87   0.801
+  9                  900      0.01       0.875  0.881  0.811
+  9                  900      0.1        0.861  0.874  0.796
+  9                  1000     0.01       0.875  0.875  0.814
+  9                  1000     0.1        0.86   0.868  0.795
+  9                  1100     0.01       0.875  0.874  0.81 
+  9                  1100     0.1        0.86   0.874  0.798
+  9                  1200     0.01       0.875  0.874  0.81 
+  9                  1200     0.1        0.859  0.868  0.797
+  9                  1300     0.01       0.875  0.874  0.81 
+  9                  1300     0.1        0.859  0.868  0.796
+  9                  1400     0.01       0.875  0.872  0.81 
+  9                  1400     0.1        0.859  0.87   0.797
+  9                  1500     0.01       0.875  0.874  0.81 
+  9                  1500     0.1        0.86   0.874  0.796
+  9                  1600     0.01       0.874  0.874  0.81 
+  9                  1600     0.1        0.859  0.868  0.796
+  9                  1700     0.01       0.874  0.875  0.811
+  9                  1700     0.1        0.858  0.874  0.796
+  9                  1800     0.01       0.874  0.875  0.81 
+  9                  1800     0.1        0.86   0.874  0.799
+  9                  1900     0.01       0.874  0.879  0.809
+  9                  1900     0.1        0.859  0.877  0.796
+  9                  2000     0.01       0.874  0.879  0.809
+  9                  2000     0.1        0.859  0.879  0.795
+
+ROC was used to select the optimal model using  the largest value.
+The final values used for the model were interaction.depth = 7, n.trees =
+ 100 and shrinkage = 0.01. 
+> 
+> gbmFactorFit$pred <- merge(gbmFactorFit$pred,  gbmFactorFit$bestTune)
+> gbmFactorCM <- confusionMatrix(gbmFactorFit, norm = "none")
+> gbmFactorCM
+Repeated Train/Test Splits Estimated (1 reps, 0.75%) Confusion Matrix 
+
+(entries are un-normalized counts)
+ 
+Confusion Matrix and Statistics
+
+              Reference
+Prediction     successful unsuccessful
+  successful          503          217
+  unsuccessful         67          770
+                                          
+               Accuracy : 0.8176          
+                 95% CI : (0.7975, 0.8365)
+    No Information Rate : 0.6339          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6277          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.8825          
+            Specificity : 0.7801          
+         Pos Pred Value : 0.6986          
+         Neg Pred Value : 0.9200          
+             Prevalence : 0.3661          
+         Detection Rate : 0.3231          
+   Detection Prevalence : 0.4624          
+                                          
+       'Positive' Class : successful      
+                                          
+
+> 
+> gbmFactorRoc <- roc(response = gbmFactorFit$pred$obs,
++                     predictor = gbmFactorFit$pred$successful,
++                     levels = rev(levels(gbmFactorFit$pred$obs)))
+> 
+> gbmROCRange <- extendrange(cbind(gbmFactorFit$results$ROC,gbmFit$results$ROC))
+> 
+> plot(gbmFactorFit, ylim = gbmROCRange, 
++      auto.key = list(columns = 4, lines = TRUE))
+> 
+> 
+> plot(gbmFit, ylim = gbmROCRange, 
++      auto.key = list(columns = 4, lines = TRUE))
+> 
+> 
+> plot(treebagRoc, type = "s", col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = treebagFit$pred$obs, predictor = treebagFit$pred$successful,     levels = rev(levels(treebagFit$pred$obs)))
+
+Data: treebagFit$pred$successful in 987 controls (treebagFit$pred$obs unsuccessful) < 570 cases (treebagFit$pred$obs successful).
+Area under the curve: 0.9205
+> plot(rpartRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = rpartFit$pred$obs, predictor = rpartFit$pred$successful,     levels = rev(levels(rpartFit$pred$obs)))
+
+Data: rpartFit$pred$successful in 29610 controls (rpartFit$pred$obs unsuccessful) < 17100 cases (rpartFit$pred$obs successful).
+Area under the curve: 0.8915
+> plot(j48FactorRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = j48FactorFit$pred$obs, predictor = j48FactorFit$pred$successful,     levels = rev(levels(j48FactorFit$pred$obs)))
+
+Data: j48FactorFit$pred$successful in 987 controls (j48FactorFit$pred$obs unsuccessful) < 570 cases (j48FactorFit$pred$obs successful).
+Area under the curve: 0.8353
+> plot(rfFactorRoc, type = "s", add = TRUE, col = rgb(.2, .2, .2, .2), legacy.axes = TRUE)
+
+Call:
+roc.default(response = rfFactorFit$pred$obs, predictor = rfFactorFit$pred$successful,     levels = rev(levels(rfFactorFit$pred$obs)))
+
+Data: rfFactorFit$pred$successful in 8883 controls (rfFactorFit$pred$obs unsuccessful) < 5130 cases (rfFactorFit$pred$obs successful).
+Area under the curve: 0.9049
+> plot(gbmRoc, type = "s", print.thres = c(.5), print.thres.pch = 3, 
++      print.thres.pattern = "", print.thres.cex = 1.2,
++      add = TRUE, col = "red", print.thres.col = "red", legacy.axes = TRUE)
+
+Call:
+roc.default(response = gbmFit$pred$obs, predictor = gbmFit$pred$successful,     levels = rev(levels(gbmFit$pred$obs)))
+
+Data: gbmFit$pred$successful in 987 controls (gbmFit$pred$obs unsuccessful) < 570 cases (gbmFit$pred$obs successful).
+Area under the curve: 0.9356
+> plot(gbmFactorRoc, type = "s", print.thres = c(.5), print.thres.pch = 16, 
++      legacy.axes = TRUE, print.thres.pattern = "", print.thres.cex = 1.2,
++      add = TRUE)
+
+Call:
+roc.default(response = gbmFactorFit$pred$obs, predictor = gbmFactorFit$pred$successful,     levels = rev(levels(gbmFactorFit$pred$obs)))
+
+Data: gbmFactorFit$pred$successful in 987 controls (gbmFactorFit$pred$obs unsuccessful) < 570 cases (gbmFactorFit$pred$obs successful).
+Area under the curve: 0.9168
+> legend(.75, .2,
++        c("Grouped Categories", "Independent Categories"),
++        lwd = c(1, 1),
++        col = c("black", "red"),
++        pch = c(16, 3))
+> 
+> ################################################################################
+> ### Section 14.5 C5.0
+> 
+> c50Grid <- expand.grid(.trials = c(1:9, (1:10)*10),
++                        .model = c("tree", "rules"),
++                        .winnow = c(TRUE, FALSE))
+> set.seed(476)
+> c50FactorFit <- train(training[,factorPredictors], training$Class,
++                       method = "C5.0",
++                       tuneGrid = c50Grid,
++                       verbose = FALSE,
++                       metric = "ROC",
++                       trControl = ctrl)
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+predict code called exit with value 1
+
+Error in { : 
+  task 1 failed - "arguments imply differing number of rows: 211, 1557"
+Calls: train ... train.default -> nominalTrainWorkflow -> %op% -> <Anonymous>
+Execution halted
