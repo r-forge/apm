@@ -2,7 +2,7 @@ Package: AppliedPredictiveModeling
 Type: Package
 Title: Functions and Data Sets for the Book 'Applied Predictive Modeling'
 Version: 1.1-001
-Date: 2013-05-21
+Date: 2013-05-29
 Author: Max Kuhn, Kjell Johnson
 Maintainer: Max Kuhn <mxkuhn@gmail.com>
 Description: A few functions and several data set for the Springer book 'Applied Predictive Modeling'

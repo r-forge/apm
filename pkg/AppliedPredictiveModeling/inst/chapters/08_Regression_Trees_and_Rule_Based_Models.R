@@ -69,7 +69,7 @@ cartTune <- train(x = solTrainXtrans, y = solTrainY,
                   tuneLength = 25,
                   trControl = ctrl)
 cartTune
-cartTune$finalModel
+## cartTune$finalModel
 
 
 ### Plot the tuning results
@@ -78,10 +78,10 @@ plot(cartTune, scales = list(x = list(log = 10)))
 ### Use the partykit package to make some nice plots. First, convert
 ### the rpart objects to party objects.
 
-library(partykit)
-
-cartTree <- as.party(cartTune$finalModel)
-plot(cartTree)
+# library(partykit)
+# 
+# cartTree <- as.party(cartTune$finalModel)
+# plot(cartTree)
 
 ### Get the variable importance. 'competes' is an argument that
 ### controls whether splits not used in the tree should be included
@@ -96,7 +96,7 @@ testResults <- data.frame(obs = solTestY,
 
 ### Tune the conditional inference tree
 
-cGrid <- data.frame(.mincriterion = sort(c(.95, seq(.75, .99, length = 15))))
+cGrid <- data.frame(.mincriterion = sort(c(.95, seq(.75, .99, length = 2))))
 
 set.seed(100)
 ctreeTune <- train(x = solTrainXtrans, y = solTrainY,
@@ -106,7 +106,7 @@ ctreeTune <- train(x = solTrainXtrans, y = solTrainY,
 ctreeTune
 plot(ctreeTune)
 
-ctreeTune$finalModel               
+##ctreeTune$finalModel               
 plot(ctreeTune$finalModel)
 
 testResults$cTree <- predict(ctreeTune, solTestXtrans)
@@ -128,9 +128,9 @@ m5Tune
 
 plot(m5Tune)
 
-m5Tune$finalModel
+## m5Tune$finalModel
 
-plot(m5Tune$finalModel)
+## plot(m5Tune$finalModel)
 
 ### Show the rule-based model too
 
@@ -162,7 +162,6 @@ set.seed(100)
 treebagTune <- train(x = solTrainXtrans, y = solTrainY,
                      method = "treebag",
                      nbagg = 50,
-                     coob = TRUE,
                      trControl = ctrl)
 
 treebagTune
