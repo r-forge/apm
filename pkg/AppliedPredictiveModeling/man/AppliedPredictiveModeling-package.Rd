@@ -14,9 +14,9 @@ More about what it does (maybe more than one line)
 \tabular{ll}{
 Package: \tab AppliedPredictiveModeling\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2011-12-20\cr
-License: \tab GPL-2\cr
+Version: \tab 1.1-001\cr
+Date: \tab 2013-05-29\cr
+License: \tab GPL\cr
 }
  An overview of how to use the package, including the most important functions 
 }
@@ -26,13 +26,6 @@ Max Kuhn
 Maintainer: Max Kuhn <mkuhn@gmail.com>
 }
 \references{
- Literature or other references for background information 
+ Kuhn M and Johnson K (2013) Applied Predictive Modeling, Springer, NY
 }
 \keyword{ package }
-\seealso{
- Optional links to other man pages, e.g. 
- 
-}
-\examples{
-## simple examples of the most important functions 
-}

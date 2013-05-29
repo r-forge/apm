@@ -11,7 +11,7 @@ labeled as \code{Class1} and the remaining 97 are \code{Class2}.
 \usage{data(twoClassData)}
 \value{
   \item{predictors}{data frame of two predictors}
-  \item{classes}{a facotr vector of class labeled}  
+  \item{classes}{a factor vector of class labeled}  
   }
 
 \examples{

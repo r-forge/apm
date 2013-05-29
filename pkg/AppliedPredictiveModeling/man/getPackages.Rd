@@ -1,7 +1,7 @@
 \name{getPackages}
 \alias{getPackages}
 \title{
-Install Packges for Each Chapter
+Install Packages for Each Chapter
 }
 \description{
 This function identifies the physical location on the user's computer where the chapter R scripts are located.
@@ -11,7 +11,7 @@ getPackages(chapter, ...)
 }
 
 \arguments{
-  \item{chapter}{an integer vector (or character versions of the integer) for the chapter number. See Detauls below:}
+  \item{chapter}{an integer vector (or character versions of the integer) for the chapter number. See Details below:}
   \item{\ldots}{options to pass to \code{\link[utils]{install.packages}}}
 }
 

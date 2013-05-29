@@ -54,7 +54,7 @@ reliefEx3$X2 <- scale(reliefEx3$X2)
 reliefEx3$prob <- NULL
 
 standardized <- permuteRelief(reliefEx3[, 1:2], reliefEx3$class, 
-                              ## For efficency, a small number of
+                              ## For efficiency, a small number of
                               ## permutations are used here.
                               nperm = 50,           
                               estimator="ReliefFequalK", 

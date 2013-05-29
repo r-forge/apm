@@ -9,13 +9,13 @@
 \alias{solTestY}
 \title{Solubility Data}
 \description{
-Tetko et al. (2001) and Huuskonen (2000) investigated a set of compounds with corresponding experimental solubility values using complex sets of de scriptors. They used linear regression and neural network models to estimate the relationship between chemical structure and solubility. For our analyses, we will use 1267 compounds and a set of more understandable descriptors that fall into one of three groups: 208 binary "fingerprints" that indicate the presence or absence of a particular chemical sub-structure, 16 count descriptors (such as the number of bonds or the number of Bromine atoms) and 4 continuous descriptors (such as molecular weight or surface area).
+Tetko et al. (2001) and Huuskonen (2000) investigated a set of compounds with corresponding experimental solubility values using complex sets of descriptors. They used linear regression and neural network models to estimate the relationship between chemical structure and solubility. For our analyses, we will use 1267 compounds and a set of more understandable descriptors that fall into one of three groups: 208 binary "fingerprints" that indicate the presence or absence of a particular chemical sub-structure, 16 count descriptors (such as the number of bonds or the number of Bromine atoms) and 4 continuous descriptors (such as molecular weight or surface area).
 }
 
 \usage{data(solubility)}
 
 \value{
-  \item{solTrainX}{trainig set predictors in their natural units. }
+  \item{solTrainX}{training set predictors in their natural units. }
   \item{solTrainXtrans}{training set predictors after transformations for skewness and centering/scaling.}
   \item{solTrainY}{a vector of log10 solubility values for the training set. }
   \item{solTestX}{test set predictors in their natural units. }

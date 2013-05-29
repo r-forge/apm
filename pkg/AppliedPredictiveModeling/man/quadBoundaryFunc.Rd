@@ -20,9 +20,9 @@ easyBoundaryFunc(n, intercept = 0, interaction = 2)
 
 }
 \details{
-The \code{quadBoundaryFunc} function creates a class boundary that is a function of both predictors. The probability values are based on a logistic regression model with model equation: \eqn{-1-2X_1 -0.2X_1^2 + 2X_2^2}{-1-2*X1 -0.2*X1^2 + 2*X2^2}. The predictors here are multivariate normal with mean (1, 0) and a moderate degree of postive correlation.
+The \code{quadBoundaryFunc} function creates a class boundary that is a function of both predictors. The probability values are based on a logistic regression model with model equation: \eqn{-1-2X_1 -0.2X_1^2 + 2X_2^2}{-1-2*X1 -0.2*X1^2 + 2*X2^2}. The predictors here are multivariate normal with mean (1, 0) and a moderate degree of positive correlation.
 
-Similarly, the \code{easyBoundaryFunc} uses a logistic regression model with model equation: \eqn{intercept -4X_1 + 4X_2 + interaction \times X_1 \times X_2}{intercept -4*X1 + 4*X2 + interaction*X1*X2}. The predictors here are multivariate normal with mean (1, 0) and a strong postive correlation.
+Similarly, the \code{easyBoundaryFunc} uses a logistic regression model with model equation: \eqn{intercept -4X_1 + 4X_2 + interaction \times X_1 \times X_2}{intercept -4*X1 + 4*X2 + interaction*X1*X2}. The predictors here are multivariate normal with mean (1, 0) and a strong positive correlation.
 }
 \value{
 Both functions return data frames with columns
@@ -37,13 +37,13 @@ Max Kuhn
 }
 
 \examples{
-## in Chapter X, 'Measuring Performance in Classification Model'
+## in Chapter 11, 'Measuring Performance in Classification Model'
 set.seed(975)
 training <- quadBoundaryFunc(500)
 testing <- quadBoundaryFunc(1000)
  
 
-## in Chapter X, 'Factors That Can Affect Model Performance'
+## in Chapter 20, 'Factors That Can Affect Model Performance'
 set.seed(615)
 dat <- easyBoundaryFunc(200, interaction = 3, intercept = 3)
 dat$X1 <- scale(dat$X1)

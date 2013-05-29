@@ -5,7 +5,7 @@
 \description{
 The Abalone data consist of data from 4177 abalones. The data consist of measurements of the type (male, female and infant), the longest shell measurement, the diameter, height and several weights (whole, shucked, viscera and shell). The outcome is the number of rings. The age of the abalone is the number of rings plus 1.5. 
 
-The data are taken from teh UCI database (\url{http://archive.ics.uci.edu/ml/datasets/Abalone}).
+The data are taken from the UCI database (\url{http://archive.ics.uci.edu/ml/datasets/Abalone}).
 }
 
 \usage{data(abalone)}

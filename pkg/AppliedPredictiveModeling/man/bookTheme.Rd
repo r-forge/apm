@@ -5,7 +5,7 @@
 Lattice Themes
 }
 \description{
-Two \pkg{lattice} themes used throught the book.
+Two \pkg{lattice} themes used throughout the book.
 }
 \usage{
 bookTheme(set = TRUE)
