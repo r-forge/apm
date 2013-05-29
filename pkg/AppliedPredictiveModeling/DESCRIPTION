@@ -1,11 +1,12 @@
 Package: AppliedPredictiveModeling
 Type: Package
-Title: Functions and Data Sets for the Book 'Applied Predictive Modeling'
-Version: 1.1-001
+Title: Functions and Data Sets for 'Applied Predictive Modeling'
+Version: 1.1-1
 Date: 2013-05-29
 Author: Max Kuhn, Kjell Johnson
 Maintainer: Max Kuhn <mxkuhn@gmail.com>
 Description: A few functions and several data set for the Springer book 'Applied Predictive Modeling'
+URL: http://appliedpredictivemodeling.com/
 Depends: R (>= 2.10), CORElearn, MASS, plyr, reshape2
 Suggests:  caret, lattice, ellipse
 License: GPL

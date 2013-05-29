@@ -3,22 +3,19 @@
 \alias{AppliedPredictiveModeling}
 \docType{package}
 \title{
-What the package does (short line)
- package title 
+Data, Functions and Scripts for 'scriptLocation'
 }
 \description{
-More about what it does (maybe more than one line)
- A concise (1-5 lines) description of the package
+This package can be used to reproduce the analyses in the text. Scripts for each chapter are located in the "chapters" directory. Use \code{scriptLocation()} to find their exact location.
 }
 \details{
 \tabular{ll}{
 Package: \tab AppliedPredictiveModeling\cr
 Type: \tab Package\cr
-Version: \tab 1.1-001\cr
+Version: \tab 1.1-1\cr
 Date: \tab 2013-05-29\cr
 License: \tab GPL\cr
 }
- An overview of how to use the package, including the most important functions 
 }
 \author{
 Max Kuhn
