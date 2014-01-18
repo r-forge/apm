@@ -63,7 +63,7 @@ GermanCreditTest  <- GermanCredit[-inTrain, ]
 library(kernlab)
 set.seed(231)
 sigDist <- sigest(Class ~ ., data = GermanCreditTrain, frac = 1)
-svmTuneGrid <- data.frame(.sigma = as.vector(sigDist)[1], .C = 2^(-2:7))
+svmTuneGrid <- data.frame(sigma = as.vector(sigDist)[1], C = 2^(-2:7))
 
 ### Optional: parallel processing can be used via the 'do' packages,
 ### such as doMC, doMPI etc. We used doMC (not on Windows) to speed

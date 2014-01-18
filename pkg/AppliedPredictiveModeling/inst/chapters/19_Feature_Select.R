@@ -121,7 +121,7 @@ rfFull <- train(training[, predVars],
                 training$Class,
                 method = "rf",
                 metric = "ROC",
-                tuneGrid = data.frame(.mtry = floor(sqrt(length(predVars)))),
+                tuneGrid = data.frame(mtry = floor(sqrt(length(predVars)))),
                 ntree = 1000,
                 trControl = fullCtrl)
 rfFull
@@ -178,7 +178,7 @@ knnFull
 ## object is modified to the approproate functions. For model details about 
 ## these functions and their arguments, see 
 ##
-##   http://caret.r-forge.r-project.org/featureselection.html
+##   http://caret.r-forge.r-project.org/featureSelection.html
 ##
 ## for more information.
 
