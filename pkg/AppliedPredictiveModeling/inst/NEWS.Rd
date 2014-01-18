@@ -7,8 +7,9 @@
 
 The package dependencies were updated. Some were moved to 'Imports'
 
+The chapter scripts were re-run with the latest versions of the \cpkg{AppliedPredictiveModeling} and\cpkg{caret} packages. For \cpkg{caret}, the names of the tuning parameter columns were changed to remove the dot. These were made to be consistent with the newer version of \cpkg{caret} and are not required. For example, \code{.sigma} was changed to \code{sigma} and so on. 
 
-The chapter scripts were re-run with the latest versions of the \cpkg{AppliedPredictiveModeling} and\cpkg{caret} packages. Additional changes are:
+Additional changes are:
 
 \itemize{
 \item \code{03_Data_Pre_Processing.R} was changed to include code from the Computing section on creating dummy variables.
@@ -22,8 +23,6 @@ The chapter scripts were re-run with the latest versions of the \cpkg{AppliedPre
 \item \code{06_Linear_Regression.R} was updated to use the newer "ridge" model in \cpkg{caret}.
 
 \item In \code{07_Non-Linear_Reg.R}, some notes were made in the potential differences in SVM results between versions of \cpkg{caret}
-
-\item In \code{12_Discriminant_Analysis.R}, the names of the tuning parameter columns were changed in \code{grid0} and \code{grid00}. These were made to be consistent with the newer version of \cpkg{caret} and are not required. For example, \code{.sigma} was changed to \code{sigma}.
 
 \item In \code{16_Class_Imbalance.R}, verboseness (verbosity?) was turned off to make the results cleaner. Also, the code for \code{svmWtFit} was using the wrong tuning grid (\code{svmGrid2} instead of \code{svmGrid1}).
 
