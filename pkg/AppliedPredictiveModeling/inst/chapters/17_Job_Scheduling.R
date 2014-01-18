@@ -147,7 +147,7 @@ costSummary <- function (data, lev = NULL, model = NULL)
     Cost = cost(data[, "pred"], data[, "obs"]))
 }
 
-### Create a contrl object for the models
+### Create a control object for the models
 ctrl <- trainControl(method = "repeatedcv", 
                      repeats = 5,
                      summaryFunction = costSummary)

@@ -94,7 +94,8 @@ registerDoMC(15)
 
 ctrl <- rfeControl(method = "repeatedcv", repeats = 5,
                    saveDetails = TRUE,
-                   index = index)
+                   index = index,
+                   returnResamp = "final")
 
 fullCtrl <- trainControl(method = "repeatedcv",
                          repeats = 5,

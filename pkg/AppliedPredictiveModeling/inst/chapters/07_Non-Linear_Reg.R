@@ -46,12 +46,6 @@ ctrl <- trainControl(method = "cv", index = indx)
 ################################################################################
 ### Section 7.1 Neural Networks
 
-library(caret)
-
-nnetGrid <- expand.grid(.decay = c(0, 0.01, .1), 
-                        .size = c(1, 3, 5, 7, 9, 11, 13), 
-                        .bag = FALSE)
-
 ### Optional: parallel processing can be used via the 'do' packages,
 ### such as doMC, doMPI etc. We used doMC (not on Windows) to speed
 ### up the computations.
@@ -64,6 +58,13 @@ nnetGrid <- expand.grid(.decay = c(0, 0.01, .1),
 library(doMC)
 registerDoMC(10)
 
+
+library(caret)
+
+nnetGrid <- expand.grid(.decay = c(0, 0.01, .1), 
+                        .size = c(1, 3, 5, 7, 9, 11, 13), 
+                        .bag = FALSE)
+
 set.seed(100)
 nnetTune <- train(x = solTrainXtrans, y = solTrainY,
                   method = "avNNet",
@@ -73,8 +74,8 @@ nnetTune <- train(x = solTrainXtrans, y = solTrainY,
                   linout = TRUE,
                   trace = FALSE,
                   MaxNWts = 13 * (ncol(solTrainXtrans) + 1) + 13 + 1,
-                  allowParallel = FALSE,
-                  maxit = 1000)
+                  maxit = 1000,
+                  allowParallel = FALSE)
 nnetTune
 
 plot(nnetTune)
@@ -101,6 +102,10 @@ plot(marsImp, top = 25)
 
 ################################################################################
 ### Section 7.3 Support Vector Machines
+
+## In a recent update to caret, the method to estimate the
+## sigma parameter was slightly changed. These results will
+## slightly differ from the text for that reason.
 
 set.seed(100)
 svmRTune <- train(x = solTrainXtrans, y = solTrainY,

@@ -115,8 +115,7 @@ fourStats <- function (data, lev = levels(data$obs), model = NULL)
 
 ctrl <- trainControl(method = "cv",
                      classProbs = TRUE,
-                     summaryFunction = fiveStats,
-                     verboseIter = TRUE)
+                     summaryFunction = fiveStats)
 
 ctrlNoProb <- ctrl
 ctrlNoProb$summaryFunction <- fourStats
@@ -418,7 +417,7 @@ set.seed(1401)
 svmWtFit <- train(CARAVAN ~ .,
                   data = trainingInd[, noNZVSet],
                   method = "svmRadial",
-                  tuneGrid = svmGrid2,
+                  tuneGrid = svmGrid1,
                   preProc = c("center", "scale"),
                   metric = "Kappa",
                   class.weights = c(insurance = 18, noinsurance = 1),

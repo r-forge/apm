@@ -36,6 +36,8 @@ load("grantData.RData")
 library(caret)
 library(doMC)
 registerDoMC(12)
+library(plyr)
+library(reshape2)
 
 ## Look at two different ways to split and resample the data. A support vector
 ## machine is used to illustrate the differences. The full set of predictors
@@ -85,10 +87,10 @@ svmFit00
 
 ## Combine the two sets of results and plot
 
-grid0 <- subset(svmFit0$results,  sigma == svmFit0$bestTune$.sigma)
+grid0 <- subset(svmFit0$results,  sigma == svmFit0$bestTune$sigma)
 grid0$Model <- "10-Fold Cross-Validation"
 
-grid00 <- subset(svmFit00$results,  sigma == svmFit00$bestTune$.sigma)
+grid00 <- subset(svmFit00$results,  sigma == svmFit00$bestTune$sigma)
 grid00$Model <- "Single 2008 Test Set"
 
 plotData <- rbind(grid00, grid0)
@@ -167,7 +169,7 @@ lrFit <- train(x = training[,reducedSet],
                trControl = ctrl)
 lrFit
 set.seed(476)
-lrFit2 <- train(x = training[,c(predictors, "Day2")], 
+lrFit2 <- train(x = training[,c(fullSet, "Day2")], 
                 y = training$Class,
                 method = "glm",
                 metric = "ROC",
