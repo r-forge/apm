@@ -61,9 +61,9 @@ registerDoMC(10)
 
 library(caret)
 
-nnetGrid <- expand.grid(.decay = c(0, 0.01, .1), 
-                        .size = c(1, 3, 5, 7, 9, 11, 13), 
-                        .bag = FALSE)
+nnetGrid <- expand.grid(decay = c(0, 0.01, .1), 
+                        size = c(1, 3, 5, 7, 9, 11, 13), 
+                        bag = FALSE)
 
 set.seed(100)
 nnetTune <- train(x = solTrainXtrans, y = solTrainY,
@@ -89,7 +89,7 @@ testResults <- data.frame(obs = solTestY,
 set.seed(100)
 marsTune <- train(x = solTrainXtrans, y = solTrainY,
                   method = "earth",
-                  tuneGrid = expand.grid(.degree = 1, .nprune = 2:38),
+                  tuneGrid = expand.grid(degree = 1, nprune = 2:38),
                   trControl = ctrl)
 marsTune
 
@@ -116,9 +116,9 @@ svmRTune <- train(x = solTrainXtrans, y = solTrainY,
 svmRTune
 plot(svmRTune, scales = list(x = list(log = 2)))                 
 
-svmGrid <- expand.grid(.degree = 1:2, 
-                       .scale = c(0.01, 0.005, 0.001), 
-                       .C = 2^(-2:5))
+svmGrid <- expand.grid(degree = 1:2, 
+                       scale = c(0.01, 0.005, 0.001), 
+                       C = 2^(-2:5))
 set.seed(100)
 svmPTune <- train(x = solTrainXtrans, y = solTrainY,
                   method = "svmPoly",
@@ -144,7 +144,7 @@ set.seed(100)
 knnTune <- train(x = knnDescr, y = solTrainY,
                  method = "knn",
                  preProc = c("center", "scale"),
-                 tuneGrid = data.frame(.k = 1:20),
+                 tuneGrid = data.frame(k = 1:20),
                  trControl = ctrl)
                  
 knnTune
