@@ -36,6 +36,7 @@ library(AppliedPredictiveModeling)
 data(concrete)
 
 library(caret)
+library(plyr)
 
 featurePlot(concrete[, -9], concrete$CompressiveStrength,
             between = list(x = 1, y = 1),
